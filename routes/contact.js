@@ -3,6 +3,7 @@ const multer = require("multer");
 const Contact = require("../models/Contact");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
+const transporter = require("../config/mailer"); // ✅ import mailer
 require("dotenv").config();
 
 const router = express.Router();
@@ -50,7 +51,26 @@ router.post("/", upload.single("registrationFile"), async (req, res) => {
 
       const contact = new Contact(contactData);
       await contact.save();
-
+      await transporter.sendMail({
+        from: `"Disaster Platform" <${process.env.EMAIL_USER}>`,
+        to: process.env.ADMIN_EMAIL,
+        subject: "New Organization Contact Submission",
+        html: `
+        <h2>New Organization Registered</h2>
+        <p><strong>Organization:</strong> ${contact.orgName}</p>
+        <p><strong>Type:</strong> ${contact.orgType || "N/A"}</p>
+        <p><strong>Email:</strong> ${contact.email}</p>
+        <p><strong>Website:</strong> ${contact.website}</p>
+        <p><strong>Contact Person:</strong> ${contact.contactPerson}</p>
+        <p><strong>Phone:</strong> ${contact.phone || "N/A"}</p>
+        <p><strong>Purpose:</strong> ${contact.purpose || "N/A"}</p>
+        ${
+          contact.registrationFile
+            ? `<p><a href="${contact.registrationFile}" target="_blank">View Registration Document</a></p>`
+            : ""
+        }
+      `,
+      });
       res.status(201).json({ message: "Contact form submitted", contact });
     }
   } catch (err) {

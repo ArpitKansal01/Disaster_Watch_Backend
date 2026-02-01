@@ -1,0 +1,62 @@
+[
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842233/disaster-reports/fb2nlfm6emdim8o2yfoe.jpg",
+    "classify": "damaged buildings",
+    "severity": "medium"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842280/disaster-reports/svyqtiezdjgwjtgqmkmw.jpg",
+    "classify": "damaged buildings",
+    "severity": "severe"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842338/disaster-reports/llfvawilvkqx97oquqvv.jpg",
+    "classify": "fallen trees",
+    "severity": "medium"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842355/disaster-reports/kcitzu2otfywxgqq2xb2.png",
+    "classify": "fallen trees",
+    "severity": "severe"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842410/disaster-reports/jzbx9fifqfpohoqsergr.jpg",
+    "classify": "fire",
+    "severity": "low"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842422/disaster-reports/h7yvphii4tzcotw9dwzb.jpg",
+    "classify": "fire",
+    "severity": "medium"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842437/disaster-reports/pi86xgdyjwrac0s0jzcu.jpg",
+    "classify": "fire",
+    "severity": "severe"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842463/disaster-reports/p8z18elborgpcdziirg6.jpg",
+    "classify": "flood",
+    "severity": "medium"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842470/disaster-reports/rjrtegh8qqii4rruf9vj.jpg",
+    "classify": "flood",
+    "severity": "severe"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842525/disaster-reports/cpvajt8xdzdthdxyw90y.jpg",
+    "classify": "landslide",
+    "severity": "low"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842598/disaster-reports/hkjxygtkksp9xauztzuj.jpg",
+    "classify": "landslide",
+    "severity": "medium"
+  },
+  {
+    "imageUrl": "https://res.cloudinary.com/dmystwuo5/image/upload/v1769842613/disaster-reports/ijnuy8oqkbdfol8p7vs7.jpg",
+    "classify": "landslide",
+    "severity": "severe"
+  }
+]

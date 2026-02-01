@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/genai": "^1.39.0",
     "appwrite": "^20.0.0",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
@@ -25,7 +26,9 @@
     "mongoose": "^8.18.1",
     "multer": "^2.0.2",
     "node-appwrite": "^19.0.0",
+    "nodemailer": "^7.0.13",
     "nodemon": "^3.1.10",
+    "openai": "^6.17.0",
     "react-leaflet": "^5.0.0",
     "streamifier": "^0.1.1"
   }

@@ -1,10 +1,15 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/user");
+const User = require("../models/user.js");
 const auth = require("../middlewares/auth");
+const { generateOTP, hashOTP } = require("../utils/otp");
+const sendOtp = require("../utils/sendOtp");
+const { resendOtp } = require("../controllers/resendOtp.js");
+
 
 const router = express.Router();
+
 const verifyJWT = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader)
@@ -19,53 +24,117 @@ const verifyJWT = (req, res, next) => {
 };
 // Signup
 router.post("/signup", async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
 
   if (!name || !email || !password)
     return res.status(400).json({ message: "All fields are required" });
 
   try {
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ message: "User already exists" });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = generateOTP();
 
-    user = new User({ name, email, password: hashedPassword, role });
+    const user = new User({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: "user",
+      otp: hashOTP(otp),
+      otpExpiresAt: Date.now() + 5 * 60 * 1000,
+    });
+
+    await user.save();
+    await sendOtp(user.email, otp);
+
+    res.status(201).json({
+      message: "OTP sent to email",
+      userId: user._id,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ======================
+   LOGIN → SEND OTP
+====================== */
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return res.status(400).json({ message: "All fields are required" });
+
+  try {
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(400).json({ message: "Invalid Email" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid Password" });
+
+    if (user.role === "user") {
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" },
+      );
+      return res.status(200).json({ token, role: user.role });
+    }
+
+    const otp = generateOTP();
+    user.otp = hashOTP(otp);
+    user.otpExpiresAt = Date.now() + 5 * 60 * 1000;
+    await user.save();
+
+    await sendOtp(user.email, otp);
+
+    res.json({
+      message: "OTP sent to email",
+      userId: user._id,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ======================
+   VERIFY OTP → ISSUE JWT
+====================== */
+router.post("/verify-otp", async (req, res) => {
+  const { userId, otp } = req.body;
+
+  if (!userId || !otp) return res.status(400).json({ message: "OTP required" });
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (
+      !user.otp ||
+      user.otp !== hashOTP(otp) ||
+      user.otpExpiresAt < Date.now()
+    ) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.otp = undefined;
+    user.otpExpiresAt = undefined;
+    user.isVerified = true;
     await user.save();
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
+
     res.json({ token, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Login
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ message: "All fields are required" });
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-    res.json({ token, role: user.role });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -136,4 +205,6 @@ router.get("/me", verifyJWT, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+router.post("/resend-otp", resendOtp);
+
 module.exports = router;
