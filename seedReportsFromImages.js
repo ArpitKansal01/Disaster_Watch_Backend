@@ -4,7 +4,7 @@ const User = require("./models/user");
 const bcrypt = require("bcryptjs");
 
 mongoose.connect(
-  "mongodb+srv://kansalarpit06_db_user:Guh4yYTcMOrIRVaj@cluster0.92otl78.mongodb.net/Disaster_DB?retryWrites=true&w=majority&appName=Cluster0",
+  "MONGODB_URI",
 );
 
 // ===== IMAGE DATA =====
