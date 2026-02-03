@@ -6,7 +6,7 @@ const auth = require("../middlewares/auth");
 const { generateOTP, hashOTP } = require("../utils/otp");
 const sendOtp = require("../utils/sendOtp");
 const { resendOtp } = require("../controllers/resendOtp.js");
-
+const { isValidEmail, isValidPassword } = require("../utils/validators");
 
 const router = express.Router();
 
@@ -26,8 +26,20 @@ const verifyJWT = (req, res, next) => {
 router.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password)
+  if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  if (!isValidPassword(password)) {
+    return res.status(400).json({
+      message:
+        "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
+    });
+  }
 
   try {
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -67,10 +79,18 @@ router.post("/login", async (req, res) => {
 
   if (!email || !password)
     return res.status(400).json({ message: "All fields are required" });
-
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(400).json({ message: "Invalid Email" });
+    if (user.isBlocked) {
+      return res.status(403).json({
+        message:
+          "Your account has been blocked due to multiple false reports. Contact support.",
+      });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid Password" });
 

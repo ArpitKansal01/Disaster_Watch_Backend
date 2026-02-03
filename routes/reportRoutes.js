@@ -2,7 +2,7 @@ const express = require("express");
 const Report = require("../models/Report");
 const sendReportStatusMail = require("../utils/reportMailer");
 const auth = require("../middlewares/auth");
-
+const User = require("../models/user");
 const router = express.Router();
 
 /* =====================================================
@@ -113,7 +113,17 @@ router.post("/:id/false", auth("organization"), async (req, res) => {
     report.verificationNote = req.body.note || "Marked as false report";
 
     await report.save();
+    // 🔥 Increment false report count
+    const user = await User.findById(report.reportedBy._id);
 
+    user.falseReportsCount += 1;
+
+    // 🚫 Block user if count >= 3
+    if (user.falseReportsCount >= 3) {
+      user.isBlocked = true;
+    }
+
+    await user.save();
     await sendReportStatusMail({
       to: report.reportedBy.email,
       name: report.reportedBy.name,
