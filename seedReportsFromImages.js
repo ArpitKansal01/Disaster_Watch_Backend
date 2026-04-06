@@ -107,7 +107,6 @@ function randomLandLocation() {
 // ✅ VALID ENUM-ONLY STATUS
 function randomStatus() {
   const statuses = [
-    "submitted",
     "pending",
     "verified",
     "responding",
@@ -115,6 +114,12 @@ function randomStatus() {
     "false",
   ];
   return statuses[Math.floor(Math.random() * statuses.length)];
+}
+// ===== RANDOM DATE GENERATOR =====
+function randomDate(start, end) {
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime()),
+  );
 }
 
 // ===== SEED =====
@@ -134,12 +139,17 @@ async function seed() {
     console.log("👤 Seed user:", seedUser._id.toString());
 
     const bulk = [];
-    const TOTAL_REPORTS = 5000;
+    const TOTAL_REPORTS = 2000;
 
     for (let i = 0; i < TOTAL_REPORTS; i++) {
       const img = imageData[Math.floor(Math.random() * imageData.length)];
       const { region, lat, lng } = randomLandLocation();
       const status = randomStatus();
+
+      const randomCreatedAt = randomDate(
+        new Date(2023, 0, 1), // start date
+        new Date(), // end date (today)
+      );
 
       bulk.push({
         imageUrl: img.imageUrl,
@@ -152,6 +162,8 @@ async function seed() {
             ? `False report detected in ${region}`
             : `Reported ${img.severity} ${img.classify} incident in ${region}`,
         location: `${region} (${lat}, ${lng})`,
+        createdAt: randomCreatedAt, // ✅ RANDOM DATE
+        updatedAt: randomCreatedAt, // optional but recommended
       });
     }
 

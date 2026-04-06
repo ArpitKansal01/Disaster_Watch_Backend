@@ -2,11 +2,11 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.js");
-const auth = require("../middlewares/auth");
-const { generateOTP, hashOTP } = require("../utils/otp");
-const sendOtp = require("../utils/sendOtp");
+const auth = require("../middlewares/auth.js");
+const { generateOTP, hashOTP } = require("../utils/otp.js");
+const sendOtp = require("../utils/sendOtp.js");
 const { resendOtp } = require("../controllers/resendOtp.js");
-const { isValidEmail, isValidPassword } = require("../utils/validators");
+const { isValidEmail, isValidPassword } = require("../utils/validators.js");
 
 const router = express.Router();
 

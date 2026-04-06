@@ -9,10 +9,13 @@ const router = express.Router();
 const upload = multer(); // for parsing multipart/form-data
 const transporter = require("../config/mailer");
 const auth = require("../middlewares/auth");
+const geminiVerifyDisaster = require("../utils/geminiVerify");
+const { predictLimiter } = require("../middlewares/rateLimiter");
 
 router.post(
   "/predict",
   auth("user"),
+  predictLimiter, // ✅ add here
   upload.single("file"),
   async (req, res) => {
     try {
@@ -25,16 +28,26 @@ router.post(
         filename: file.originalname,
       });
       const severityRes = await axios.post(
-        "http://127.0.0.1:8000/predict",
+        `${process.env.AI_SERVICE_URL}/predict`,
         formDataSeverity,
-        { headers: { ...formDataSeverity.getHeaders() } },
+        {
+          headers: {
+            ...formDataSeverity.getHeaders(),
+          },
+          timeout: 30000, // optional but recommended
+        },
       );
-      const predicted_disaster = severityRes.data.predicted_disaster;
-      const predicted_severity = severityRes.data.predicted_severity;
+
+      if (!severityRes.data) {
+        return res.status(500).json({
+          error: "AI service unavailable",
+        });
+      }
+      const { predicted_disaster, predicted_severity } = severityRes.data;
+
       const nonDisasterClasses = [
         "damaged_buildings",
         "fallen_trees",
-        "non_disaster",
         "fire",
         "flood",
         "landslide",
@@ -43,12 +56,16 @@ router.post(
       if (!nonDisasterClasses.includes(predicted_disaster)) {
         isNoDisaster = true;
       }
-      if (predicted_severity == "no_damage") {
+      if (
+        predicted_severity == "no_damage" ||
+        predicted_severity == "uncertain"
+      ) {
         isNoDisaster = true;
       }
       const message = isNoDisaster
         ? "NO DISASTER DETECTED"
         : predicted_disaster;
+
       const severity = isNoDisaster
         ? "NO SEVERITY DETECTED"
         : predicted_severity;
@@ -62,7 +79,9 @@ router.post(
           data: severityRes.data,
         });
       }
-      const { note, location } = req.body;
+
+      const note = req.body.note?.trim() || "";
+      const location = req.body.location?.trim() || "";
 
       /* -------------------- DUPLICATE CHECK -------------------- */
       const DUPLICATE_TIME_WINDOW_MINUTES = 60;
@@ -105,6 +124,33 @@ router.post(
         });
       }
 
+      // Gemini verification
+      let geminiPrediction = null;
+
+      try {
+        geminiPrediction = await geminiVerifyDisaster(
+          req.file.buffer,
+          req.file.mimetype,
+        );
+      } catch (error) {
+        console.log("Gemini quota exceeded or unavailable");
+      }
+
+      const geminiResult = geminiPrediction?.toLowerCase().trim();
+      const modelPrediction = predicted_disaster.toLowerCase().trim();
+
+      if (!geminiResult) {
+        console.log("Using primary model only");
+      } else if (geminiResult !== modelPrediction) {
+        return res.json({
+          message: "Not a Disaster",
+          severity: "NO SEVERITY DETECTED",
+          saved: false,
+          reason: "No disaster detected, image not uploaded.",
+          data: severityRes.data,
+        });
+      }
+
       // ✅ Step 3: Upload to Cloudinary if disaster is detected
       const base64File = `data:${
         req.file.mimetype
@@ -126,6 +172,10 @@ router.post(
         reportedBy: req.user.id,
         status: "pending",
       });
+
+      const io = req.app.get("io");
+
+      io.emit("reportCreated", report);
 
       const detectedTag = message;
       const summary = note || "No additional notes provided";

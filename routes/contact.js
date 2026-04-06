@@ -41,7 +41,6 @@ router.post("/", upload.single("registrationFile"), async (req, res) => {
         use_filename: true,
         unique_filename: false, // Optional: keep original filename
       });
-      console.log(result.url);
 
       // Store the secure URL returned by Cloudinary
       contactData.registrationFile = result.url;

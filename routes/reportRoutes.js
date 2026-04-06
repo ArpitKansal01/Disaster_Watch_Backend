@@ -77,6 +77,9 @@ router.post("/:id/verify", auth("organization"), async (req, res) => {
 
     await report.save();
 
+    const io = req.app.get("io");
+    io.emit("reportUpdated", report);
+
     // 📧 SEND FULL REPORT DATA
     await sendReportStatusMail({
       to: report.reportedBy.email,
@@ -113,6 +116,10 @@ router.post("/:id/false", auth("organization"), async (req, res) => {
     report.verificationNote = req.body.note || "Marked as false report";
 
     await report.save();
+
+    const io = req.app.get("io");
+    io.emit("reportUpdated", report);
+
     // 🔥 Increment false report count
     const user = await User.findById(report.reportedBy._id);
 
@@ -156,7 +163,8 @@ router.post("/:id/respond", auth("organization"), async (req, res) => {
 
     report.status = "responding";
     await report.save();
-
+    const io = req.app.get("io");
+    io.emit("reportUpdated", report);
     await sendReportStatusMail({
       to: report.reportedBy.email,
       name: report.reportedBy.name,
@@ -189,7 +197,8 @@ router.post("/:id/resolve", auth("organization"), async (req, res) => {
 
     report.status = "resolved";
     await report.save();
-
+    const io = req.app.get("io");
+    io.emit("reportUpdated", report);
     await sendReportStatusMail({
       to: report.reportedBy.email,
       name: report.reportedBy.name,
