@@ -48,5 +48,11 @@ app.use("/api/severity", severity);
 app.use("/api/reports", reportRoutes);
 app.use("/api/ai", aiRoutes);
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    Status: "DIsaster Backend is Healthy",
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
